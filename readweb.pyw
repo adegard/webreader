@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import os
 import re
 import urllib.parse
-import webbrowser
+#import webbrowser
 
 class WebReaderApp:
     """A simple e-book style web reader with navigation, themes, and text formatting."""
