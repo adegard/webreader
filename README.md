@@ -1,4 +1,4 @@
-# 📖 Web Page Reader
+# 📖 Web Page Reader - WORK IN PROGESS -
 
 A **Python-based eBook-style web reader** that fetches, formats, and displays webpage content as a readable book-like interface.
 
