@@ -18,26 +18,29 @@ class WebReaderApp:
         # Page tracking variables
         self.text_content = ""
         self.font_size = 14
-        self.current_pos = 1.0
+
+        # Top Control Panel (Horizontal Layout)
+        top_frame = tk.Frame(root)
+        top_frame.pack(pady=10, fill="x")
 
         # Entry for URL
-        self.url_entry = tk.Entry(root, width=50)
-        self.url_entry.pack(pady=10)
+        self.url_entry = tk.Entry(top_frame, width=50)
+        self.url_entry.grid(row=0, column=0, padx=5)
         self.url_entry.bind("<Return>", self.load_page)  # Bind Enter key
 
         # Load Button
-        self.load_button = tk.Button(root, text="Load", command=self.load_page)
-        self.load_button.pack(pady=5)
-
-        # Theme Toggle Button
-        self.theme_button = tk.Button(root, text="Toggle Theme", command=self.toggle_theme, bg="gray", fg="white")
-        self.theme_button.pack(pady=5)
+        self.load_button = tk.Button(top_frame, text="Load", command=self.load_page)
+        self.load_button.grid(row=0, column=1, padx=5)
 
         # Font Size Buttons
-        self.increase_button = tk.Button(root, text="Increase Font", command=self.increase_font)
-        self.increase_button.pack(pady=5)
-        self.decrease_button = tk.Button(root, text="Decrease Font", command=self.decrease_font)
-        self.decrease_button.pack(pady=5)
+        self.increase_button = tk.Button(top_frame, text="A+", command=self.increase_font)
+        self.increase_button.grid(row=0, column=2, padx=5)
+        self.decrease_button = tk.Button(top_frame, text="A-", command=self.decrease_font)
+        self.decrease_button.grid(row=0, column=3, padx=5)
+
+        # Theme Toggle Button
+        self.theme_button = tk.Button(top_frame, text="Theme", command=self.toggle_theme, bg="gray", fg="white")
+        self.theme_button.grid(row=0, column=4, padx=5)
 
         # Frame for text and scrollbar
         frame = tk.Frame(root)
@@ -52,11 +55,18 @@ class WebReaderApp:
         self.text_display.pack(fill="both", expand=True)
         scrollbar.config(command=self.text_display.yview)
 
-        # Navigation Buttons
-        self.left_button = tk.Button(root, text="← Previous Page", command=self.prev_page)
+        # Navigation Buttons (Horizontal Row Below Text)
+        nav_frame = tk.Frame(root)
+        nav_frame.pack(fill="x")
+
+        self.left_button = tk.Button(nav_frame, text="← Previous Page", command=self.prev_page)
         self.left_button.pack(side="left", padx=20, pady=5)
-        self.right_button = tk.Button(root, text="Next Page →", command=self.next_page)
+        self.right_button = tk.Button(nav_frame, text="Next Page →", command=self.next_page)
         self.right_button.pack(side="right", padx=20, pady=5)
+
+        # Keyboard bindings for left/right arrows
+        self.root.bind("<Left>", lambda event: self.prev_page())
+        self.root.bind("<Right>", lambda event: self.next_page())
 
         # Load last visited page if available
         self.load_last_page()
@@ -84,9 +94,6 @@ class WebReaderApp:
             # Apply formatting (justify text)
             self.apply_text_format()
 
-            # Reset position
-            self.current_pos = 1.0
-
         except Exception as e:
             self.text_display.delete("1.0", tk.END)
             self.text_display.insert(tk.END, f"Error: {e}")
@@ -94,13 +101,12 @@ class WebReaderApp:
     def make_urls_clickable(self, text):
         """Identifies URLs and makes them clickable."""
         url_pattern = re.compile(r"https?://\S+")
-        modified_text = text
         matches = url_pattern.findall(text)
 
         for url in matches:
-            modified_text = modified_text.replace(url, f"{url}")
+            text = text.replace(url, f"{url}")
 
-        return modified_text
+        return text
 
     def apply_text_format(self):
         """Applies justified text formatting with clickable URLs."""
