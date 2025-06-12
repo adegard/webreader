@@ -11,8 +11,8 @@ class WebReaderApp:
 
         # Theme variables
         self.theme = "light"
-        self.bg_colors = {"light": "white", "dark": "#2E2E2E", "sepia": "#F4E1C1"}
-        self.fg_colors = {"light": "black", "dark": "white", "sepia": "#5C4033"}
+        self.bg_colors = {"light": "white", "dark": "#101524", "sepia": "#F4E1C1"}
+        self.fg_colors = {"light": "black", "dark": "#EFDACA", "sepia": "#5C4033"}
 
         # Page tracking variables
         self.text_content = ""
