@@ -48,7 +48,7 @@ class WebReaderApp:
         scrollbar = tk.Scrollbar(frame)
         scrollbar.pack(side="right", fill="y")
 
-        self.text_display = tk.Text(frame, wrap="word", font=("Arial", self.font_size), height=20, width=60, yscrollcommand=scrollbar.set)
+        self.text_display = tk.Text(frame, wrap="word", font=("Arial", self.font_size + 2), height=20, width=60, yscrollcommand=scrollbar.set)
         self.text_display.pack(fill="both", expand=True)
         scrollbar.config(command=self.text_display.yview)
 
@@ -77,7 +77,7 @@ class WebReaderApp:
             # Extract headings and paragraphs
             headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
             paragraphs = [p.get_text().strip() for p in soup.find_all('p') if len(p.get_text().strip()) > 50]
-            
+
             # Structure text into chapters
             if headings:
                 organized_text = "**Table of Contents:**\n\n" + "\n".join(headings) + "\n\n"
@@ -90,15 +90,33 @@ class WebReaderApp:
                     organized_text += f"\n\n**{chapter}**\n" + "\n".join(content) + "\n"
 
             else:
-                organized_text = "\n"   
-                    
+                organized_text = "**Table of Contents:**\n\n(No headings detected)\n"
+
             # Display structured content
             self.text_display.delete("1.0", tk.END)
             self.text_display.insert(tk.END, organized_text)
+            self.apply_text_format()
 
         except Exception as e:
             self.text_display.delete("1.0", tk.END)
             self.text_display.insert(tk.END, f"Error: {e}")
+
+    def apply_text_format(self):
+        """Formats headings to bold and increases font size."""
+        self.text_display.tag_configure("bold", font=("Arial", self.font_size + 4, "bold"))
+
+        # Apply bold formatting to headings
+        for heading in self.text_display.get("1.0", tk.END).split("\n"):
+            cleaned_heading = heading.replace("**", "").strip()  # Remove asterisks
+            if heading.startswith("**") and heading.endswith("**"):
+                start_idx = self.text_display.search(heading, "1.0", tk.END)
+                end_idx = f"{start_idx} + {len(heading)} chars"
+                self.text_display.delete(start_idx, end_idx)  # Remove original text
+                self.text_display.insert(start_idx, cleaned_heading)  # Insert cleaned text
+                self.text_display.tag_add("bold", start_idx, f"{start_idx} + {len(cleaned_heading)} chars")
+
+        # Increase overall font size
+        self.text_display.configure(font=("Arial", self.font_size + 2))
 
     def prev_page(self):
         """Scrolls up."""
