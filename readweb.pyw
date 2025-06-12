@@ -3,18 +3,22 @@ import requests
 from bs4 import BeautifulSoup
 import webbrowser
 import os
+import re
 
 class WebReaderApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Web Page Reader")
+        self.root.title("E-Book Style Web Reader")
 
         # Theme variables
-        self.dark_mode = False
-        self.bg_light = "white"
-        self.fg_light = "black"
-        self.bg_dark = "#2E2E2E"
-        self.fg_dark = "white"
+        self.theme = "light"
+        self.bg_colors = {"light": "white", "dark": "#2E2E2E", "sepia": "#F4E1C1"}
+        self.fg_colors = {"light": "black", "dark": "white", "sepia": "#5C4033"}
+
+        # Page tracking variables
+        self.text_content = ""
+        self.font_size = 14
+        self.current_pos = 1.0
 
         # Entry for URL
         self.url_entry = tk.Entry(root, width=50)
@@ -25,9 +29,15 @@ class WebReaderApp:
         self.load_button = tk.Button(root, text="Load", command=self.load_page)
         self.load_button.pack(pady=5)
 
-        # Toggle Theme Button (ensuring visibility)
-        self.theme_button = tk.Button(root, text="Toggle Dark/Light Mode", command=self.toggle_theme, bg="gray", fg="white")
+        # Theme Toggle Button
+        self.theme_button = tk.Button(root, text="Toggle Theme", command=self.toggle_theme, bg="gray", fg="white")
         self.theme_button.pack(pady=5)
+
+        # Font Size Buttons
+        self.increase_button = tk.Button(root, text="Increase Font", command=self.increase_font)
+        self.increase_button.pack(pady=5)
+        self.decrease_button = tk.Button(root, text="Decrease Font", command=self.decrease_font)
+        self.decrease_button.pack(pady=5)
 
         # Frame for text and scrollbar
         frame = tk.Frame(root)
@@ -37,22 +47,16 @@ class WebReaderApp:
         scrollbar = tk.Scrollbar(frame)
         scrollbar.pack(side="right", fill="y")
 
-        # Text Display
-        self.text_display = tk.Text(frame, wrap="word", font=("Arial", 12), height=20, width=60, yscrollcommand=scrollbar.set)
+        # Text Display (Justified text)
+        self.text_display = tk.Text(frame, wrap="word", font=("Arial", self.font_size), height=20, width=60, yscrollcommand=scrollbar.set)
         self.text_display.pack(fill="both", expand=True)
         scrollbar.config(command=self.text_display.yview)
 
-        # Links Display
-        self.links_display = tk.Listbox(root, height=10, width=80)
-        self.links_display.pack(pady=5)
-        self.links_display.bind("<Double-Button-1>", self.open_selected_link)
-
-        # Font Size Controls
-        self.font_size = 12
-        self.increase_button = tk.Button(root, text="Increase Font", command=self.increase_font)
-        self.increase_button.pack(pady=5)
-        self.decrease_button = tk.Button(root, text="Decrease Font", command=self.decrease_font)
-        self.decrease_button.pack(pady=5)
+        # Navigation Buttons
+        self.left_button = tk.Button(root, text="← Previous Page", command=self.prev_page)
+        self.left_button.pack(side="left", padx=20, pady=5)
+        self.right_button = tk.Button(root, text="Next Page →", command=self.next_page)
+        self.right_button.pack(side="right", padx=20, pady=5)
 
         # Load last visited page if available
         self.load_last_page()
@@ -67,62 +71,97 @@ class WebReaderApp:
             soup = BeautifulSoup(response.text, 'html.parser')
 
             # Extract and clean text content (removing extra new lines)
-            text_content = "\n".join([line.strip() for line in soup.get_text().split("\n") if line.strip()])
+            raw_text = "\n".join([line.strip() for line in soup.get_text().split("\n") if line.strip()])
+            self.text_content = self.make_urls_clickable(raw_text)
 
             # Save last visited page
             with open("last_url.txt", "w") as file:
                 file.write(url)
 
             self.text_display.delete("1.0", tk.END)
-            self.text_display.insert(tk.END, text_content)
+            self.text_display.insert(tk.END, self.text_content)
 
-            # Extract and show links
-            self.links_display.delete(0, tk.END)
-            for link in soup.find_all('a', href=True):
-                href = link.get('href')
-                if href.startswith("http"):
-                    self.links_display.insert(tk.END, href)
+            # Apply formatting (justify text)
+            self.apply_text_format()
+
+            # Reset position
+            self.current_pos = 1.0
 
         except Exception as e:
             self.text_display.delete("1.0", tk.END)
             self.text_display.insert(tk.END, f"Error: {e}")
 
+    def make_urls_clickable(self, text):
+        """Identifies URLs and makes them clickable."""
+        url_pattern = re.compile(r"https?://\S+")
+        modified_text = text
+        matches = url_pattern.findall(text)
+
+        for url in matches:
+            modified_text = modified_text.replace(url, f"{url}")
+
+        return modified_text
+
+    def apply_text_format(self):
+        """Applies justified text formatting with clickable URLs."""
+        self.text_display.tag_configure("justify", justify="left")
+        self.text_display.tag_add("justify", "1.0", tk.END)
+
+        # Make URLs clickable
+        url_pattern = re.compile(r"https?://\S+")
+        matches = url_pattern.findall(self.text_content)
+
+        for url in matches:
+            start_idx = self.text_display.search(url, "1.0", stopindex=tk.END)
+            if start_idx:
+                end_idx = f"{start_idx} + {len(url)}c"
+                self.text_display.tag_add(url, start_idx, end_idx)
+                self.text_display.tag_config(url, foreground="blue", underline=True)
+                self.text_display.tag_bind(url, "<Button-1>", lambda event, u=url: webbrowser.open(u))
+
     def load_last_page(self):
+        """Loads last visited webpage."""
         if os.path.exists("last_url.txt"):
             with open("last_url.txt", "r") as file:
                 last_url = file.read().strip()
                 self.url_entry.insert(0, last_url)
                 self.load_page()
 
-    def open_selected_link(self, event):
-        selected_index = self.links_display.curselection()
-        if selected_index:
-            selected_url = self.links_display.get(selected_index[0])
-            self.url_entry.delete(0, tk.END)
-            self.url_entry.insert(0, selected_url)
-            self.load_page()
+    def prev_page(self):
+        """Scrolls up by one screenful."""
+        self.text_display.yview_scroll(-1, "pages")
+
+    def next_page(self):
+        """Scrolls down by one screenful."""
+        self.text_display.yview_scroll(1, "pages")
 
     def increase_font(self):
+        """Increases font size dynamically."""
         self.font_size += 2
         self.text_display.configure(font=("Arial", self.font_size))
 
     def decrease_font(self):
+        """Decreases font size dynamically."""
         self.font_size -= 2
         self.text_display.configure(font=("Arial", self.font_size))
 
     def toggle_theme(self):
-        self.dark_mode = not self.dark_mode
+        """Cycles through light, dark, and sepia themes."""
+        theme_options = ["light", "sepia", "dark"]
+        current_index = theme_options.index(self.theme)
+        self.theme = theme_options[(current_index + 1) % len(theme_options)]
         self.apply_theme()
 
     def apply_theme(self):
-        if self.dark_mode:
-            self.root.config(bg=self.bg_dark)
-            self.text_display.config(bg=self.bg_dark, fg=self.fg_dark)
-            self.theme_button.config(bg="gray", fg="white")  # Ensure visibility in dark mode
-        else:
-            self.root.config(bg=self.bg_light)
-            self.text_display.config(bg=self.bg_light, fg=self.fg_light)
-            self.theme_button.config(bg="white", fg="black")  # Ensure visibility in light mode
+        """Applies selected theme to background and text colors."""
+        bg_color = self.bg_colors[self.theme]
+        fg_color = self.fg_colors[self.theme]
+        
+        self.root.config(bg=bg_color)
+        self.text_display.config(bg=bg_color, fg=fg_color)
+        self.theme_button.config(bg="gray", fg="white")
+        self.left_button.config(bg=bg_color, fg=fg_color)
+        self.right_button.config(bg=bg_color, fg=fg_color)
 
 # Run the App
 if __name__ == "__main__":
