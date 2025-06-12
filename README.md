@@ -14,7 +14,7 @@ A **Python-based eBook-style web reader** that fetches, formats, and displays we
 
 ## 🛠 Installation
 1. install dependency:
-pip install requests beautifulsoup4
+``` pip install requests beautifulsoup4 tkinter```
 2. Run the pyw file
 
 ## 🎯 Usage
