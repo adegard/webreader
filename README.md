@@ -27,8 +27,6 @@ Navigate pages using arrow keys or ← Previous / Next → buttons.
 
 Toggle themes between Light, Dark, and Sepia.
 
-Click URLs inside the reader to open them in the browser.
-
 Adjust font size dynamically for easier reading.
 
 ## 🎨 Customization
