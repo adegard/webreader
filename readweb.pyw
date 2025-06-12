@@ -77,17 +77,21 @@ class WebReaderApp:
             # Extract headings and paragraphs
             headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
             paragraphs = [p.get_text().strip() for p in soup.find_all('p') if len(p.get_text().strip()) > 50]
-
+            
             # Structure text into chapters
-            organized_text = "**Table of Contents:**\n\n"
-            chapters = {}
+            if headings:
+                organized_text = "**Table of Contents:**\n\n" + "\n".join(headings) + "\n\n"
+                chapters = {}
 
-            for i, heading in enumerate(headings):
-                chapters[heading] = paragraphs[i:i+3]  # Assign related paragraphs to headings
+                for i, heading in enumerate(headings):
+                    chapters[heading] = paragraphs[i:i+3] if i < len(paragraphs) else ["(No content available)"]
 
-            for chapter, content in chapters.items():
-                organized_text += f"\n\n**{chapter}**\n" + "\n".join(content) + "\n"
+                for chapter, content in chapters.items():
+                    organized_text += f"\n\n**{chapter}**\n" + "\n".join(content) + "\n"
 
+            else:
+                organized_text = "\n"   
+                    
             # Display structured content
             self.text_display.delete("1.0", tk.END)
             self.text_display.insert(tk.END, organized_text)
