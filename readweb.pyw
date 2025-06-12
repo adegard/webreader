@@ -1,7 +1,6 @@
 import tkinter as tk
 import requests
 from bs4 import BeautifulSoup
-import webbrowser
 import os
 import re
 
@@ -75,6 +74,7 @@ class WebReaderApp:
         self.apply_theme()
 
     def load_page(self, event=None):
+        """Loads the webpage into the reader."""
         url = self.url_entry.get()
         try:
             response = requests.get(url)
@@ -99,7 +99,7 @@ class WebReaderApp:
             self.text_display.insert(tk.END, f"Error: {e}")
 
     def make_urls_clickable(self, text):
-        """Identifies URLs and makes them clickable."""
+        """Identifies URLs and binds them to load in-app instead of a browser."""
         url_pattern = re.compile(r"https?://\S+")
         matches = url_pattern.findall(text)
 
@@ -109,11 +109,11 @@ class WebReaderApp:
         return text
 
     def apply_text_format(self):
-        """Applies justified text formatting with clickable URLs."""
+        """Formats text with justified alignment and makes URLs clickable."""
         self.text_display.tag_configure("justify", justify="left")
         self.text_display.tag_add("justify", "1.0", tk.END)
 
-        # Make URLs clickable
+        # Bind URLs to load inside the app
         url_pattern = re.compile(r"https?://\S+")
         matches = url_pattern.findall(self.text_content)
 
@@ -123,7 +123,13 @@ class WebReaderApp:
                 end_idx = f"{start_idx} + {len(url)}c"
                 self.text_display.tag_add(url, start_idx, end_idx)
                 self.text_display.tag_config(url, foreground="blue", underline=True)
-                self.text_display.tag_bind(url, "<Button-1>", lambda event, u=url: webbrowser.open(u))
+                self.text_display.tag_bind(url, "<Button-1>", lambda event, u=url: self.load_new_page(u))
+
+    def load_new_page(self, url):
+        """Loads a new page inside the reader when a link is clicked."""
+        self.url_entry.delete(0, tk.END)
+        self.url_entry.insert(0, url)
+        self.load_page()
 
     def load_last_page(self):
         """Loads last visited webpage."""
