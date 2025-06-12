@@ -13,7 +13,9 @@ A **Python-based eBook-style web reader** that fetches, formats, and displays we
 - **Justified text formatting** for an elegant reading experience.
 
 ## 🛠 Installation
-Run the pyw file
+1. install dependency:
+pip install requests beautifulsoup4
+2. Run the pyw file
 
 ## 🎯 Usage
 Enter a website URL and press Enter or click the Load button.
