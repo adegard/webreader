@@ -9,7 +9,6 @@ A **Python-based eBook-style web reader** that fetches, formats, and displays we
 ## 🚀 Features
 - **Light, Dark, and Sepia themes** for better readability.
 - **Smooth page navigation** using **← Left Arrow** and **→ Right Arrow** or **buttons**.
-- **Clickable URLs** inside the text for direct browsing.
 - **Adjustable font size** with `A+` / `A-` buttons.
 - **Remembers last visited webpage** and loads it automatically.
 - **Justified text formatting** for an elegant reading experience.
