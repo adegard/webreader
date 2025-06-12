@@ -1,6 +1,8 @@
 # 📖 Web Page eBook Reader
 
 A **Python-based eBook-style web reader** that fetches, formats, and displays webpage content as a readable book-like interface.
+</br>
+<img src="https://github.com/adegard/webreader/blob/main/Immagine 2025-06-12 120020.jpg"  align="center">
 
 ## 🚀 Features
 - **Light, Dark, and Sepia themes** for better readability.
