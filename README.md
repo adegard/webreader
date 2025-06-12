@@ -1,6 +1,8 @@
 # 📖 Web Page eBook Reader
 
 A **Python-based eBook-style web reader** that fetches, formats, and displays webpage content as a readable book-like interface.
+
+
 </br>
 <img src="https://github.com/adegard/webreader/blob/main/Immagine 2025-06-12 120020.jpg"  align="center">
 
@@ -13,7 +15,8 @@ A **Python-based eBook-style web reader** that fetches, formats, and displays we
 - **Justified text formatting** for an elegant reading experience.
 
 ## 🛠 Installation
-1. install dependency:
+1. install dependencies:
+   
 ``` pip install requests beautifulsoup4 tkinter```
 2. Run the pyw file
 
