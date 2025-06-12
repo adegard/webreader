@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 import re
+import webbrowser
 
 class WebReaderApp:
     def __init__(self, root):
@@ -17,6 +18,7 @@ class WebReaderApp:
         # Page tracking variables
         self.text_content = ""
         self.font_size = 14
+        self.rotation_angle = 0  # Track text rotation state
 
         # Top Control Panel (Horizontal Layout)
         top_frame = tk.Frame(root)
@@ -34,12 +36,15 @@ class WebReaderApp:
         # Font Size Buttons
         self.increase_button = tk.Button(top_frame, text="A+", command=self.increase_font)
         self.increase_button.grid(row=0, column=2, padx=5)
+
         self.decrease_button = tk.Button(top_frame, text="A-", command=self.decrease_font)
         self.decrease_button.grid(row=0, column=3, padx=5)
 
         # Theme Toggle Button
         self.theme_button = tk.Button(top_frame, text="Theme", command=self.toggle_theme, bg="gray", fg="white")
         self.theme_button.grid(row=0, column=4, padx=5)
+
+
 
         # Frame for text and scrollbar
         frame = tk.Frame(root)
@@ -54,12 +59,17 @@ class WebReaderApp:
         self.text_display.pack(fill="both", expand=True)
         scrollbar.config(command=self.text_display.yview)
 
+        # Bind right-click menu
+        self.text_display.bind("<Button-3>", self.show_context_menu)  # Windows/Linux
+        self.text_display.bind("<Control-Button-1>", self.show_context_menu)  # macOS alternative
+
         # Navigation Buttons (Horizontal Row Below Text)
         nav_frame = tk.Frame(root)
         nav_frame.pack(fill="x")
 
         self.left_button = tk.Button(nav_frame, text="← Previous Page", command=self.prev_page)
         self.left_button.pack(side="left", padx=20, pady=5)
+
         self.right_button = tk.Button(nav_frame, text="Next Page →", command=self.next_page)
         self.right_button.pack(side="right", padx=20, pady=5)
 
@@ -79,8 +89,6 @@ class WebReaderApp:
         try:
             response = requests.get(url)
             soup = BeautifulSoup(response.text, 'html.parser')
-
-            # Extract and clean text content (removing extra new lines)
             raw_text = "\n".join([line.strip() for line in soup.get_text().split("\n") if line.strip()])
             self.text_content = self.make_urls_clickable(raw_text)
 
@@ -90,8 +98,6 @@ class WebReaderApp:
 
             self.text_display.delete("1.0", tk.END)
             self.text_display.insert(tk.END, self.text_content)
-
-            # Apply formatting (justify text)
             self.apply_text_format()
 
         except Exception as e:
@@ -102,10 +108,8 @@ class WebReaderApp:
         """Identifies URLs and binds them to load in-app instead of a browser."""
         url_pattern = re.compile(r"https?://\S+")
         matches = url_pattern.findall(text)
-
         for url in matches:
             text = text.replace(url, f"{url}")
-
         return text
 
     def apply_text_format(self):
@@ -113,31 +117,13 @@ class WebReaderApp:
         self.text_display.tag_configure("justify", justify="left")
         self.text_display.tag_add("justify", "1.0", tk.END)
 
-        # Bind URLs to load inside the app
-        url_pattern = re.compile(r"https?://\S+")
-        matches = url_pattern.findall(self.text_content)
-
-        for url in matches:
-            start_idx = self.text_display.search(url, "1.0", stopindex=tk.END)
-            if start_idx:
-                end_idx = f"{start_idx} + {len(url)}c"
-                self.text_display.tag_add(url, start_idx, end_idx)
-                self.text_display.tag_config(url, foreground="blue", underline=True)
-                self.text_display.tag_bind(url, "<Button-1>", lambda event, u=url: self.load_new_page(u))
-
-    def load_new_page(self, url):
-        """Loads a new page inside the reader when a link is clicked."""
-        self.url_entry.delete(0, tk.END)
-        self.url_entry.insert(0, url)
-        self.load_page()
-
     def load_last_page(self):
         """Loads last visited webpage."""
         if os.path.exists("last_url.txt"):
             with open("last_url.txt", "r") as file:
                 last_url = file.read().strip()
-                self.url_entry.insert(0, last_url)
-                self.load_page()
+            self.url_entry.insert(0, last_url)
+            self.load_page()
 
     def prev_page(self):
         """Scrolls up by one screenful."""
@@ -168,12 +154,24 @@ class WebReaderApp:
         """Applies selected theme to background and text colors."""
         bg_color = self.bg_colors[self.theme]
         fg_color = self.fg_colors[self.theme]
-        
-        self.root.config(bg=bg_color)
         self.text_display.config(bg=bg_color, fg=fg_color)
-        self.theme_button.config(bg="gray", fg="white")
-        self.left_button.config(bg=bg_color, fg=fg_color)
-        self.right_button.config(bg=bg_color, fg=fg_color)
+
+    def show_context_menu(self, event):
+        """Displays a right-click menu for searching selected text on Qwant."""
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Search on Qwant", command=self.search_selected_text)
+        menu.post(event.x_root, event.y_root)
+
+    def search_selected_text(self):
+        """Searches selected text using Qwant."""
+        try:
+            selected_text = self.text_display.get(tk.SEL_FIRST, tk.SEL_LAST)
+            query_url = f"https://www.qwant.com/?q={selected_text.replace(' ', '+')}"
+            webbrowser.open(query_url)
+        except tk.TclError:
+            pass  # No text selected
+
+
 
 # Run the App
 if __name__ == "__main__":
