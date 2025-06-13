@@ -12,6 +12,7 @@ A **Python-based eBook-style web reader** that fetches, formats, and displays we
 - **Adjustable font size** with `A+` / `A-` buttons.
 - **Remembers last visited webpage** and loads it automatically.
 - **Justified text formatting** for an elegant reading experience.
+- **NEW** search terms in Wikipedia
 
 ## 🛠 Installation
 1. install dependencies:
