@@ -2,6 +2,8 @@ import tkinter as tk
 import requests
 from bs4 import BeautifulSoup
 import os
+import difflib
+
 
 class WebReaderApp:
     """A simple e-book style web reader with navigation, themes, and Wikipedia search."""
@@ -119,55 +121,56 @@ class WebReaderApp:
         if not url:
             return
 
-        # Automatically add "https://" if missing
         if not url.startswith(("http://", "https://")):
             url = "https://" + url
-            
+
         try:
             response = requests.get(url)
             soup = BeautifulSoup(response.text, 'html.parser')
 
+            # Collect headings (including h3)
             headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
+
+            # Collect bolded text separately
+            bold_titles = [b.get_text().strip() for b in soup.find_all(['b', 'strong'])]
+
+            # Merge both lists while ensuring no duplicates
+            #all_titles = list(dict.fromkeys(headings + bold_titles))  # Preserves order while removing duplicates
+            # Extract headings including those inside special div wrappers
+            headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
+
+            # Look for additional headings inside <div> elements with class "mw-heading"
+            wrapped_headings = [div.find('h3').get_text().strip() for div in soup.find_all('div', class_="mw-heading") if div.find('h3')]
+
+            # Merge both lists while removing duplicates
+            all_titles = list(dict.fromkeys(headings + wrapped_headings))  # Keeps order while eliminating duplicates
+
+
             paragraphs = [p.get_text().strip() for p in soup.find_all('p') if len(p.get_text().strip()) > 50]
 
-            if headings:
-                organized_text = "**Table of Contents:**\n\n" + "\n".join(headings) + "\n\n"
-                chapters = {}
-
-                for i, heading in enumerate(headings):
-                    chapters[heading] = paragraphs[i:i+3] if i < len(paragraphs) else ["(No content available)"]
-
-                for chapter, content in chapters.items():
-                    organized_text += f"\n\n**{chapter}**\n" + "\n".join(content) + "\n"
-
-            else:
-                organized_text = "**Table of Contents:**\n\n(No headings detected)\n"
+            text_content = "\n\n".join(paragraphs)
 
             self.text_display.delete("1.0", tk.END)
-            self.text_display.insert(tk.END, organized_text)
-            self.apply_text_format()            
+            self.text_display.insert(tk.END, text_content)
+
+            # Apply bold formatting to detected titles
+            self.apply_bold_titles(all_titles)
 
         except Exception as e:
             self.text_display.delete("1.0", tk.END)
             self.text_display.insert(tk.END, f"Error: {e}")
 
-    def apply_text_format(self):
-        """Formats headings to bold and increases font size."""
+    def apply_bold_titles(self, headings):
+        """Formats headings to bold in the text display."""
         self.text_display.tag_configure("bold", font=("Arial", self.font_size + 4, "bold"))
 
-        # Apply bold formatting to headings
-        for heading in self.text_display.get("1.0", tk.END).split("\n"):
-            cleaned_heading = heading.replace("**", "").strip()  # Remove asterisks
-            if heading.startswith("**") and heading.endswith("**"):
-                start_idx = self.text_display.search(heading, "1.0", tk.END)
+        for heading in headings:
+            start_idx = self.text_display.search(heading, "1.0", tk.END)
+            if start_idx:
                 end_idx = f"{start_idx} + {len(heading)} chars"
-                self.text_display.delete(start_idx, end_idx)  # Remove original text
-                self.text_display.insert(start_idx, cleaned_heading)  # Insert cleaned text
-                self.text_display.tag_add("bold", start_idx, f"{start_idx} + {len(cleaned_heading)} chars")
+                self.text_display.tag_add("bold", start_idx, end_idx)
 
-        # Increase overall font size
-        self.text_display.configure(font=("Arial", self.font_size + 2))
-
+        
 
     def prev_page(self):
         """Scrolls up."""
